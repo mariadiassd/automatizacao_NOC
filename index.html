@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <title>Automatização NOC - Piauí Link</title>
+        <style>
+          body {
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            background: url('fundo.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            padding: 30px;
+          }
+      
+          .container {
+            background: rgba(131, 138, 162, 0.615);
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            border-top: 6px solid #002a49;
+          }
+      
+          .tabs {
+            display: flex;
+          }
+      
+          .tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            cursor: pointer;
+            background: #84a1d7df;
+            border-bottom: 3px solid transparent;
+            font-weight: bold;
+            transition: background 0.3s;
+          }
+      
+          .tab:hover {
+            background: #b3d9ff;
+          }
+      
+          .tab.active {
+            background: #7e90b0d0;
+            border-bottom: 3px solid #062a45;
+          }
+      
+          .tab-content {
+            display: none;
+            padding: 20px 30px 30px;
+          }
+      
+          .tab-content.active {
+            display: block;
+          }
+      
+          label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #ffffff;
+          }
+      
+          input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(241, 241, 241, 0.501);
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-top: 5px;
+          }
+      
+          textarea {
+            resize: vertical;
+          }
+      
+          button {
+            width: 100%;
+            padding: 12px;
+            background-color: #112b4d;
+            color: rgba(255, 255, 255, 0.853);
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+          }
+      
+          button:hover {
+            background-color: hsl(205, 85%, 11%);
+          }
+      
+          #resultado, #resultadoProtocolo, #resultadoPlantao, #resultadoReporte {
+            margin-top: 20px;
+            font-size: 0.95rem;
+            color: #000000;
+            background: #ffffff6e;
+            padding: 15px;
+            border-left: 5px solid #007acc;
+            border-radius: 8px;
+            white-space: pre-wrap;
+          }
+      
+          .form-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+          }
+      
+          .form-group input,
+          .form-group button {
+            flex: 1;
+          }
+        </style>
+</head>
+<body>
+  <div class="container">
+    <div class="tabs">
+      <div class="tab active" onclick="abrirAba('formulario')">Formulário de protocolo</div>
+      <div class="tab" onclick="abrirAba('localizacao')">Localização Técnica</div>
+      <div class="tab" onclick="abrirAba('plantao')">Passagem de Plantão</div>
+      <div class="tab" onclick="abrirAba('reporte')">Reporte automático</div>
+    </div>
+
+    <div id="formulario" class="tab-content active">
+      <h2>Formulário de Solicitação</h2>
+      <label>Protocolo:</label>
+      <input type="text" id="protocolo">
+      <label>Nível de prioridade:</label>
+      <select id="prioridade">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+      <label>Resumo Solicitação (MOTIVO):</label>
+      <textarea id="resumo"></textarea>
+      <label>Local:</label>
+      <input type="text" id="local">
+      <label>Cidade:</label>
+      <input type="text" id="cidade">
+      <label>Coordenadas do local:</label>
+      <input type="text" id="coordenadas">
+      <label>Link Maps:</label>
+      <input type="text" id="maps">
+      <label>CTO/CEO:</label>
+      <input type="text" id="cto">
+      <label>Coordenada CTO/CEO:</label>
+      <input type="text" id="coord_cto">
+      <label>Responsável local (nome/telefone):</label>
+      <input type="text" id="responsavel">
+      <label>Tipo da Rede:</label>
+      <select id="rede">
+        <option value="P2P">P2P</option>
+        <option value="GPON">GPON</option>
+      </select>
+      <label>Tipo de Cabo:</label>
+      <input type="text" id="cabo">
+      <button onclick="gerarTexto()">Gerar e Copiar</button>
+      <div id="resultadoProtocolo"></div>
+    </div>
+
+    <div id="localizacao" class="tab-content">
+      <h2>Equipe Técnica Próxima</h2>
+      <div class="form-group">
+        <input type="text" id="cidadeInput" placeholder="Digite uma cidade do Piauí" oninput="sugerirCidades()" onkeydown="if(event.key==='Enter') buscarCidadeMaisProxima()">
+        <button onclick="buscarCidadeMaisProxima()">Buscar</button>
+      </div>
+      <ul id="sugestoes" style="list-style:none; padding-left:0;"></ul>
+      <div id="resultado"></div>
+    </div>
+
+    <div id="plantao" class="tab-content">
+      <h2>Passagem de Plantão</h2>
+      <label>Data:</label>
+      <input type="text" id="dataPlantao" readonly>
+      <label>Turno:</label>
+      <select id="turnoPlantao">
+        <option value="Dia">Dia</option>
+        <option value="Noite">Noite</option>
+      </select>
+      <hr>
+      <div id="camposPlantao"></div>
+      <button onclick="gerarPassagem()">Gerar Passagem e Copiar</button>
+      <div id="resultadoPlantao"></div>
+    </div>
+     <div id="reporte" class="tab-content">
+       <h2>Reporte Diário</h2>
+     <form id="formReporte">
+    <label>Data:</label>
+    <input type="date" name="Data" required><br>
+    <label>SIGLA:</label>
+    <input type="text" name="Sigla" id="siglaInput" oninput="preencherCidade()" required><br>
+    <label>CIDADE:</label>
+    <input type="text" name="Cidade" id="cidadeReporte" readonly><br>
+    <label>TIPO:</label>
+    <select name="Tipo" required>
+      <option value="">Selecione</option>
+      <option>OLT</option>
+      <option>PAP</option>
+      <option>PAG</option>
+      <option>RETIFICADORA</option>
+      <option>DTM</option>
+      <option>LINK</option>
+      <option>RML</option>
+    </select><br>
+    
+    <label>PARCEIRO:</label>
+    <input type="text" name="parceiro"><br>
+    <label>PROTOCOLO:</label>
+    <input type="text" name="protocolo"><br>
+    <label>DESCRIÇÃO:</label>
+    <textarea name="descricao"></textarea><br>
+    <label>TÉCNICO:</label>
+    <input type="text" name="tecnico"><br>
+    <label>STATUS:</label>
+    <select name="status" required>
+      <option value="ON">ON</option>
+      <option value="OFF">OFF</option>
+    </select><br>
+       <label>DATA E HORA - DOWN:</label>
+       <input type="time-local"><br>
+<button type="button" onclick="copiarReporte()">Copiar Reporte</button>
+     </form>
+  </div>
+  
+  <script>
+    function abrirAba(id) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      event.target.classList.add('active');
+
+      if (id === 'plantao') criarCamposPlantao();
+    }
+
+    function gerarTexto() {
+      const texto = `
+⭕*Protocolo:* ${document.getElementById('protocolo').value}
+⚠️*Nível de prioridade:* ${document.getElementById('prioridade').value}
+💻*Setor Solicitante:* NOC
+💬*Resumo Solicitação MOTIVO:* ${document.getElementById('resumo').value}
+📍Local: ${document.getElementById('local').value}
+🏙Cidade: ${document.getElementById('cidade').value}
+🚩Coordenadas do local: ${document.getElementById('coordenadas').value}
+🚩Link Maps: ${document.getElementById('maps').value}
+📪CTO/CEO: ${document.getElementById('cto').value}
+🚩Coordenada CTO/CEO: ${document.getElementById('coord_cto').value}
+Responsável local (nome/telefone): ${document.getElementById('responsavel').value}
+Tipo da Rede (P2P/GPON): ${document.getElementById('rede').value}
+Tipo de Cabo: ${document.getElementById('cabo').value}
+      `.trim();
+
+      const resultado = document.getElementById('resultadoProtocolo');
+      resultado.textContent = texto;
+      navigator.clipboard.writeText(texto).then(() => {
+        alert("Texto copiado para a área de transferência!");
+      });
+    }
+
+    const cidadesTecnicas = {
+      "Bom Jesus": [-9.0713, -44.3594],
+      "Corrente": [-10.4333, -45.1633],
+      "Esperantina": [-3.8889, -42.2333],
+      "Floriano": [-6.7715, -43.0243],
+      "Parnaíba": [-2.905, -41.7754],
+      "Picos": [-7.0767, -41.4677],
+      "Piripiri": [-4.2719, -41.7717],
+      "São Raimundo Nonato": [-9.0123, -42.6984],
+      "Teresina": [-5.0892, -42.8016],
+      "Uruçuí": [-7.2394, -44.5575]
+    };
+
+    function sugerirCidades() {
+      const input = document.getElementById('cidadeInput').value.toLowerCase();
+      const lista = document.getElementById('sugestoes');
+      lista.innerHTML = '';
+      if (!input) return;
+
+      Object.keys(cidadesTecnicas).forEach(nome => {
+        if (nome.toLowerCase().startsWith(input)) {
+          const li = document.createElement('li');
+          li.textContent = nome;
+          li.style.cursor = 'pointer';
+          li.onclick = () => {
+            document.getElementById('cidadeInput').value = nome;
+            lista.innerHTML = '';
+          };
+          lista.appendChild(li);
+        }
+      });
+    }
+
+    async function buscarCidadeMaisProxima() {
+      const cidade = document.getElementById('cidadeInput').value.trim();
+      const resultado = document.getElementById('resultado');
+      resultado.textContent = "";
+      document.getElementById('sugestoes').innerHTML = "";
+
+      if (!cidade) {
+        resultado.textContent = "Por favor, insira uma cidade.";
+        return;
+      }
+
+      const cidadeCapitalizada = cidade.charAt(0).toUpperCase() + cidade.slice(1).toLowerCase();
+      if (cidadesTecnicas.hasOwnProperty(cidadeCapitalizada)) {
+        resultado.innerHTML = `<p><strong>Essa cidade possui equipe técnica in loco!</strong></p>`;
+        return;
+      }
+
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${cidade}, Piauí, Brasil`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!data || data.length === 0) {
+          resultado.textContent = "Cidade não encontrada.";
+          return;
+        }
+
+        const { lat, lon } = data[0];
+        const distancia = (lat1, lon1, lat2, lon2) => {
+          const toRad = deg => deg * Math.PI / 180;
+          const R = 6371;
+          const dLat = toRad(lat2 - lat1);
+          const dLon = toRad(lon2 - lon1);
+          const a = Math.sin(dLat / 2) ** 2 +
+                    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                    Math.sin(dLon / 2) ** 2;
+          return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        };
+
+        let cidadeMaisProxima = "";
+        let menorDistancia = Infinity;
+
+        for (const [nome, [latC, lonC]] of Object.entries(cidadesTecnicas)) {
+          const d = distancia(parseFloat(lat), parseFloat(lon), latC, lonC);
+          if (d < menorDistancia) {
+            menorDistancia = d;
+            cidadeMaisProxima = nome;
+          }
+        }
+
+        const distanciaKm = menorDistancia.toFixed(2);
+        const tempoHoras = (menorDistancia / 70).toFixed(2);
+        const tempoLegivel = tempoHoras < 1 
+          ? `${Math.round(tempoHoras * 60)} minutos` 
+          : `${Math.floor(tempoHoras)}h ${Math.round((tempoHoras % 1) * 60)}min`;
+
+        resultado.innerHTML = `
+          <p><strong>Base mais próxima:</strong> ${cidadeMaisProxima}</p>
+          <p><strong>Distância:</strong> ${distanciaKm} km</p>
+          <p><strong>Tempo estimado:</strong> ${tempoLegivel}</p>
+        `;
+
+      } catch (error) {
+        resultado.textContent = "Erro ao buscar dados. Verifique sua conexão.";
+      }
+    }
+
+    const setores = [
+      "BACKBONE",
+      "OLT'S, RAMAIS E DATACOM",
+      "PAG´S",
+      "PAP´S",
+      "RETIFICADORAS",
+      "TJ",
+      "CLIENTES"
+    ];
+
+    function criarCamposPlantao() {
+      const container = document.getElementById('camposPlantao');
+      container.innerHTML = '';
+
+      setores.forEach(setor => {
+        const div = document.createElement('div');
+        div.style.marginBottom = '20px';
+
+        const label = document.createElement('label');
+        label.textContent = `Atualizações sobre ${setor}:`;
+        label.style.display = 'block';
+        label.style.marginTop = '15px';
+
+        const select = document.createElement('select');
+        select.onchange = function () {
+          textarea.disabled = this.value === "nao";
+          textarea.value = this.value === "nao" ? "Sem alertas" : "";
+        };
+
+        const option1 = new Option("Sem alertas", "nao");
+        const option2 = new Option("Tem alertas", "sim");
+        select.append(option1, option2);
+
+        const textarea = document.createElement('textarea');
+        textarea.rows = 3;
+        textarea.style.marginTop = '10px';
+        textarea.disabled = true;
+        textarea.value = "Sem alertas";
+
+        div.append(label, select, textarea);
+        container.appendChild(div);
+      });
+    }
+
+    function gerarPassagem() {
+      const data = document.getElementById('dataPlantao').value;
+      const turno = document.getElementById('turnoPlantao').value;
+      const divs = document.getElementById('camposPlantao').children;
+
+      let resultado = `📅 DATA: ${data} | TURNO: ${turno.toUpperCase()}\n`;
+
+      setores.forEach((setor, index) => {
+        const textarea = divs[index].querySelector('textarea');
+        resultado += `\n---------------------------------${setor}------------------------------------ \n${textarea.value.trim()}\n`;
+      });
+
+      document.getElementById('resultadoPlantao').textContent = resultado;
+      navigator.clipboard.writeText(resultado).then(() => {
+        alert("Passagem de plantão copiada para a área de transferência!");
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const hoje = new Date();
+      const dataFormatada = hoje.toLocaleDateString('pt-BR');
+      document.getElementById('dataPlantao').value = dataFormatada;
+      criarCamposPlantao();
+    });
+
+    function preencherCidade() {
+      const sigla = document.getElementById('siglaInput').value.toUpperCase();
+      const cidade = siglaCidadeMap[sigla] || "";
+      document.getElementById('cidadeReporte').value = cidade;
+    }
+ 
+  const siglaCidadeMap = {
+    "ARR": "ARRAIAL", "BDA": "BARRA D'ALCANTARA", "BLE": "BELEM DO PIAUI", "BVP": "BELA VISTA DO PIAUI",
+    "CGR": "CALDEIRAO GRANDE DO PIAUI", "CNP": "CURRAL NOVO DO PIAUI", "CON": "CONCEICAO DO CANINDE",
+    "CPO": "CAPITAO GERVASIO OLIVEIRA", "CRA": "CURRALINHOS", "FRA": "FRANCINOPOLIS", "FRM": "FRANCISCO MACEDO",
+    "FTP": "FLORESTA DO PIAUI", "ITA": "ITAUEIRA", "LAS": "LAGOA DO SITIO", "NSN": "NOSSA SENHORA DE NAZARE",
+    "PDP": "PAU D'ARCO DO PIAUI", "PIO": "PIO IX", "PQT": "PAQUETA", "PTP": "PRATA DO PIAUI",
+    "QDN": "QUEIMADA NOVA", "SAP": "SAO FRANCISCO DE ASSIS DO PIAUI", "SGP": "SIGEFREDO PACHECO",
+    "SRP": "SANTA ROSA DO PIAUI", "STP": "SANTANA DO PIAUI", "TQP": "TANQUE DO PIAUI", "WAL": "WALL FERRAZ",
+    "AAI": "ANTONIO ALMEIDA", "AAU": "ANISIO DE ABREU", "ABR": "AGUA BRANCA", "AGG": "ALVORADA DO GURGUEIA",
+    "ALT": "ALTOS", "AMA": "AMARANTE", "ARO": "AROAZES", "ASP": "ASSUNCAO DO PIAUI", "ATL": "ALTO LONGA",
+    "AVE": "AVELINO LOPES", "BAR": "BARRAS", "BAT": "BATALHA", "BDU": "BARRO DURO", "BEN": "BENEDITINOS",
+    "BEP": "BETANIA DO PIAUI", "BER": "BERTOLINIA", "BJE": "BOM JESUS", "BJP": "BREJO DO PIAUI",
+    "BOP": "BOQUEIRAO DO PIAUI", "BRA": "BRASILEIRA", "BTL": "BURITI DOS LOPES", "BUR": "BURITI DOS MONTES",
+    "CAF": "CAMPO ALEGRE DO FIDALGO", "CAL": "COCAL", "CAR": "CARACOL", "CBP": "CABECEIRAS DO PIAUI",
+    "CCA": "CAPITAO DE CAMPOS", "CCT": "CRISTINO CASTRO", "CDP": "CARIDADE DO PIAUI",
+    "CGU": "COLONIA DO GURGUEIA", "CJD": "CORONEL JOSE DIAS", "CJP": "CAJUEIRO DA PRAIA", "CNV": "CANAVIEIRA",
+    "COL": "COLONIA DO PIAUI", "COR": "CORRENTE", "CPM": "CAMPO MAIOR", "CTB": "CANTO DO BURITI",
+    "CUA": "CURIMATA", "DEL": "DEMERVAL LOBAO", "DIN": "DOM INOCENCIO", "DIR": "DIRCEU ARCOVERDE",
+    "DOM": "DOMINGOS MOURAO", "DXL": "DOM EXPEDITO LOPES", "ELM": "ELISEU MARTINS", "ELV": "ELESBAO VELOSO",
+    "ESP": "ESPERANTINA", "FAP": "FARTURA DO PIAUI", "FLO": "FLORIANO", "FLP": "FLORES DO PIAUI",
+    "FRO": "FRONTEIRAS", "GIL": "GILBUES", "INH": "INHUMA", "IPP": "IPIRANGA DO PIAUI",
+    "ITS": "ITAINOPOLIS", "JAC": "JAICOS", "JCB": "JACOBINA DO PIAUI", "JOC": "JOAO COSTA",
+    "JPS": "JOAQUIM PIRES", "JSF": "JOSE DE FREITAS", "JUB": "JULIO BORGES", "LAP": "LAGOA DO PIAUI",
+    "LBP": "LAGOA DO BARRO DO PIAUI", "LGP": "LAGOINHA DO PIAUI", "LUZ": "LUZILANDIA", "MAP": "MONTE ALEGRE DO PIAUI",
+    "MAR": "MARCOLANDIA", "MCT": "MORRO CABECA NO TEMPO", "MGA": "MIGUEL ALVES", "MGI": "MONSENHOR GIL",
+    "MIL": "MIGUEL LEAO", "MOE": "MANOEL EMIDIO", "MUR": "MURICI DOS PORTELAS", "NAP": "NAZARE DO PIAUI",
+    "NAZ": "NAZARIA", "OEI": "OEIRAS", "PAE": "PAES LANDIM", "PAT": "PATOS DO PIAUI",
+    "PDL": "PEDRO LAURENTINO", "PED": "PEDRO II", "PFP": "PASSAGEM FRANCA DO PIAUI", "PGA": "PARNAGUA",
+    "PHB": "PARNAIBA", "PIC": "PICOS", "PIM": "PIMENTEIRAS", "PIP": "PIRIPIRI", "PLT": "PAULISTANA",
+    "POA": "PORTO ALEGRE DO PIAUI", "POR": "PORTO", "PRC": "PIRACURUCA", "RBP": "RIBEIRA DO PIAUI",
+    "RCF": "RIACHO FRIO", "REG": "REGENERACAO", "RGG": "REDENCAO DO GURGUEIA", "RGP": "RIO GRANDE DO PIAUI",
+    "RIB": "RIBEIRO GONCALVES", "SBL": "SEBASTIAO LEAL", "SCP": "SANTA CRUZ DO PIAUI", "SEB": "SEBASTIAO BARROS",
+    "SFP": "SAO FRANCISCO DO PIAUI", "SGG": "SAO GONCALO DO GURGUEIA", "SIP": "SANTO INACIO DO PIAUI",
+    "SJA": "SAO JOAO DO ARRAIAL", "SJF": "SAO JOAO DA FRONTEIRA", "SJP": "SAO JOAO DO PIAUI",
+    "SJU": "SAO JULIAO", "SMB": "SAO MIGUEL DA BAIXA GRANDE", "SMF": "SAO MIGUEL DO FIDALGO",
+    "SPM": "SIMPLICIO MENDES", "SRN": "SAO RAIMUNDO NONATO", "SSA": "SAO JOAO DA SERRA",
+    "STF": "SANTA FILOMENA", "TBP": "TAMBORIL DO PIAUI", "THE": "TERESINA", "THE ITR": "TERESINA/ITARARE",
+    "THE DC": "TERESINA/DATACENTER", "UNI": "UNIAO", "URU": "URUCUI", "VAG": "VARZEA GRANDE",
+    "VAL": "VALENCA DO PIAUI", "PJP": "PAJEU DO PIAUI", "PAD": "PADRE MARCOS", "SOP": "SOCORRO DO PIAUI",
+    "BGR": "BAIXA GRANDE DO RIBEIRO", "BFP": "BONFIM DO PIAUI", "SJO": "SAO JOSE DO PEIXE", "GBA": "GUARIBAS",
+    "PVS": "PAVUSSU", "CTH": "COCAL DE TELHA", "CAJ": "CAJAZEIRAS DO PIAUI", "CGP": "CAMPO GRANDE DO PIAUI",
+    "FCA": "FRANCISCO AYRES", "CAX": "CAXINGO", "PAL": "PALMEIRAIS", "JTP": "JATOBA DO PIAUI",
+    "CTP": "CASTELO DO PIAUI", "NSA": "NOVO SANTO ANTONIO", "SJV": "SAO JOAO DA VARJOTA", "JER": "JERUMENHA",
+    "MPT": "MARCOS PARENTE", "NSR": "NOVA SANTA RITA", "GUA": "GUADALUPE", "ISC": "ISAIAS COELHO",
+    "JOM": "JOCA MARQUES", "MAD": "MADEIRO", "JUP": "JUAZEIRO DO PIAUI", "COI": "COIVARAS",
+    "SMT": "SÃO MIGUEL DO TAPUIO"
+  };
+
+  function preencherCidade() {
+    const sigla = document.getElementById('siglaInput').value.toUpperCase();
+    document.getElementById('cidadeReporte').value = siglaCidadeMap[sigla] || '';
+  }
+      function copiarReporte() {
+      const data = document.getElementById('data').value;
+      const sigla = document.getElementById('sigla').value;
+      const cidade = document.getElementById('cidade').value;
+      const tipo = document.getElementById('tipo').value;
+      const parceiro = document.getElementById('parceiro').value;
+      const protocolo = document.getElementById('protocolo').value;
+      const descricao = document.getElementById('descricao').value;
+      const tecnico = document.getElementById('tecnico').value;
+      const status = document.getElementById('status').value;
+      const down = document.getElementById('down').value;
+
+      const texto = `DATA: ${data}\nSIGLA: ${sigla}\nCIDADE: ${cidade}\nTIPO: ${tipo}\nPARCEIRO: ${parceiro}\nPROTOCOLO: ${protocolo}\nDESCRIÇÃO: ${descricao}\nTÉCNICO: ${tecnico}\nSTATUS: ${status}\nDATA E HORA - DOWN: ${down}`;
+
+      navigator.clipboard.writeText(texto).then(() => alert("Reporte copiado!"));
+    }
+  </script>
+</body>
+</html>
